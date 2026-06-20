@@ -1,0 +1,29 @@
+[package]
+name = "rusty_sound"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+freya = { git = "https://github.com/marc2332/freya", branch = "main" }
+env_logger = "0.11"
+log = "0.4"
+cpal = "0.17"
+
+[target.'cfg(target_os = "android")'.dependencies]
+android_logger = "0.15"
+freya-android = { git = "https://github.com/marc2332/freya", branch = "main" }
+winit = { version = "0.30", features = ["android-native-activity", "rwh_06"] }
+
+[lib]
+path = "src/lib.rs"
+name = "rusty_sound"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+path = "src/main.rs"
+name = "rusty_sound_desktop"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true

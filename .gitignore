@@ -1,0 +1,8 @@
+/target
+**/.gradle
+**/build
+AndroidApp/app/src/main/jniLibs/
+*.apk
+*.iml
+.idea/
+local.properties
