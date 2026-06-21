@@ -21,7 +21,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libasound2-dev libgl1-mesa-dev libxkbcommon-dev libwayland-dev
+          sudo apt-get install -y libasound2-dev libgl1-mesa-dev libxkbcommon-dev libwayland-dev libfreetype-dev libfontconfig-dev libegl-dev libgles-dev libwayland-egl1
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
