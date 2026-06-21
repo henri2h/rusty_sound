@@ -9,7 +9,7 @@ fn android_main(droid_app: winit::platform::android::activity::AndroidApp) {
     );
 
     let event_loop =
-        winit::event_loop::EventLoop::<freya_winit::renderer::NativeEvent>::with_user_event()
+        winit::event_loop::EventLoop::<freya::prelude::NativeEvent>::with_user_event()
             .with_android_app(droid_app.clone())
             .build()
             .expect("Failed to build event loop");

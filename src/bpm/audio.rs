@@ -218,9 +218,3 @@ pub fn current_mic_bpm() -> Option<f64> {
     SHARED_STATE.lock().ok()?.current_bpm
 }
 
-pub fn is_mic_listening() -> bool {
-    SHARED_STATE
-        .lock()
-        .map(|s| s.is_listening)
-        .unwrap_or(false)
-}
