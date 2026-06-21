@@ -3498,7 +3498,6 @@ dependencies = [
  "cpal",
  "env_logger",
  "freya",
- "freya-android",
  "log",
  "winit",
 ]
