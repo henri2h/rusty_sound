@@ -118,83 +118,90 @@ static SHARED_STATE: LazyLock<Arc<Mutex<AudioState>>> =
 static STREAM: Mutex<Option<cpal::Stream>> = Mutex::new(None);
 
 pub fn start_listening() -> Result<(), String> {
-    {
-        let mut stream_guard = STREAM.lock().map_err(|e| e.to_string())?;
-        if stream_guard.is_some() {
+    let mut stream_guard = STREAM.lock().map_err(|e| e.to_string())?;
+
+    if stream_guard.is_some() {
+        let still_listening = SHARED_STATE
+            .lock()
+            .map(|s| s.is_listening)
+            .unwrap_or(false);
+        if still_listening {
             return Ok(());
         }
+        *stream_guard = None;
+    }
 
+    {
         let mut state = SHARED_STATE.lock().map_err(|e| e.to_string())?;
         state.reset();
         state.is_listening = true;
-
-        let host = cpal::default_host();
-        let device = host
-            .default_input_device()
-            .ok_or("No input device available. Check microphone permissions.")?;
-
-        let config = device
-            .default_input_config()
-            .map_err(|e| format!("Failed to get input config: {e}"))?;
-
-        let channels = config.channels() as usize;
-        let shared = Arc::clone(&SHARED_STATE);
-        let err_shared = Arc::clone(&SHARED_STATE);
-
-        let stream = match config.sample_format() {
-            cpal::SampleFormat::F32 => device.build_input_stream(
-                &config.into(),
-                move |data: &[f32], _: &cpal::InputCallbackInfo| {
-                    let mono: Vec<f32> = if channels == 1 {
-                        data.to_vec()
-                    } else {
-                        data.chunks(channels).map(|c| c[0]).collect()
-                    };
-                    if let Ok(mut s) = shared.try_lock() {
-                        s.process_samples(&mono);
-                    }
-                },
-                move |err| {
-                    if let Ok(mut s) = err_shared.try_lock() {
-                        s.error = Some(format!("Audio error: {err}"));
-                        s.is_listening = false;
-                    }
-                },
-                None,
-            ),
-            cpal::SampleFormat::I16 => device.build_input_stream(
-                &config.into(),
-                move |data: &[i16], _: &cpal::InputCallbackInfo| {
-                    let mono: Vec<f32> = if channels == 1 {
-                        data.iter().map(|&s| s as f32 / i16::MAX as f32).collect()
-                    } else {
-                        data.chunks(channels)
-                            .map(|c| c[0] as f32 / i16::MAX as f32)
-                            .collect()
-                    };
-                    if let Ok(mut s) = shared.try_lock() {
-                        s.process_samples(&mono);
-                    }
-                },
-                move |err| {
-                    if let Ok(mut s) = err_shared.try_lock() {
-                        s.error = Some(format!("Audio error: {err}"));
-                        s.is_listening = false;
-                    }
-                },
-                None,
-            ),
-            format => return Err(format!("Unsupported sample format: {format:?}")),
-        }
-        .map_err(|e| format!("Failed to build input stream: {e}"))?;
-
-        stream
-            .play()
-            .map_err(|e| format!("Failed to start stream: {e}"))?;
-
-        *stream_guard = Some(stream);
     }
 
+    let host = cpal::default_host();
+    let device = host
+        .default_input_device()
+        .ok_or("No input device available. Check microphone permissions.")?;
+
+    let config = device
+        .default_input_config()
+        .map_err(|e| format!("Failed to get input config: {e}"))?;
+
+    let channels = config.channels() as usize;
+    let shared = Arc::clone(&SHARED_STATE);
+    let err_shared = Arc::clone(&SHARED_STATE);
+
+    let stream = match config.sample_format() {
+        cpal::SampleFormat::F32 => device.build_input_stream(
+            &config.into(),
+            move |data: &[f32], _: &cpal::InputCallbackInfo| {
+                let mono: Vec<f32> = if channels == 1 {
+                    data.to_vec()
+                } else {
+                    data.chunks(channels).map(|c| c[0]).collect()
+                };
+                if let Ok(mut s) = shared.try_lock() {
+                    s.process_samples(&mono);
+                }
+            },
+            move |err| {
+                if let Ok(mut s) = err_shared.try_lock() {
+                    s.error = Some(format!("Audio error: {err}"));
+                    s.is_listening = false;
+                }
+            },
+            None,
+        ),
+        cpal::SampleFormat::I16 => device.build_input_stream(
+            &config.into(),
+            move |data: &[i16], _: &cpal::InputCallbackInfo| {
+                let mono: Vec<f32> = if channels == 1 {
+                    data.iter().map(|&s| s as f32 / i16::MAX as f32).collect()
+                } else {
+                    data.chunks(channels)
+                        .map(|c| c[0] as f32 / i16::MAX as f32)
+                        .collect()
+                };
+                if let Ok(mut s) = shared.try_lock() {
+                    s.process_samples(&mono);
+                }
+            },
+            move |err| {
+                if let Ok(mut s) = err_shared.try_lock() {
+                    s.error = Some(format!("Audio error: {err}"));
+                    s.is_listening = false;
+                }
+            },
+            None,
+        ),
+        format => return Err(format!("Unsupported sample format: {format:?}")),
+    }
+    .map_err(|e| format!("Failed to build input stream: {e}"))?;
+
+    stream
+        .play()
+        .map_err(|e| format!("Failed to start stream: {e}"))?;
+
+    *stream_guard = Some(stream);
     Ok(())
 }
 

@@ -83,7 +83,14 @@ pub fn app() -> impl IntoElement {
                 .padding(Gaps::new_all(8.0))
                 .child(
                     Button::new()
-                        .on_press(move |_| mode.set(true))
+                        .on_press(move |_| {
+                            if !is_tap && listening {
+                                audio::stop_listening();
+                                mic_listening.set(false);
+                                mic_status.set("Stopped".to_string());
+                            }
+                            mode.set(true);
+                        })
                         .child(if is_tap { "> Tap" } else { "Tap" }),
                 )
                 .child(
