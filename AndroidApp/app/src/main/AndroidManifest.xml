@@ -11,8 +11,7 @@
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:exported="true"
-            android:softInputMode="adjustResize">
+            android:exported="true">
 
             <meta-data
                 android:name="android.app.lib_name"
