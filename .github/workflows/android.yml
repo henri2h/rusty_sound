@@ -1,4 +1,4 @@
-name: Android Build
+name: Build
 
 on:
   push:
@@ -12,8 +12,8 @@ env:
   RUST_BACKTRACE: short
 
 jobs:
-  check-desktop:
-    name: Desktop cargo check
+  build-desktop:
+    name: Desktop Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,8 +36,15 @@ jobs:
           key: desktop-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: desktop-
 
-      - name: Cargo check
-        run: cargo check --bin rusty_sound_desktop
+      - name: Build desktop binary
+        run: cargo build --release --bin rusty_sound_desktop
+
+      - name: Upload desktop binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: rusty-sound-desktop-linux
+          path: target/release/rusty_sound_desktop
+          if-no-files-found: error
 
   build-android:
     name: Android APK
@@ -91,5 +98,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: rusty-sound-debug
+          name: rusty-sound-debug-apk
           path: AndroidApp/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
