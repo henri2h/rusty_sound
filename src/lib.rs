@@ -2,6 +2,9 @@ pub mod app;
 pub mod bpm;
 
 #[cfg(target_os = "android")]
+use winit::platform::android::EventLoopBuilderExtAndroid;
+
+#[cfg(target_os = "android")]
 #[unsafe(no_mangle)]
 fn android_main(droid_app: winit::platform::android::activity::AndroidApp) {
     android_logger::init_once(
