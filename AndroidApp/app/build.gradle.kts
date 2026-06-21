@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "dev.music.rusty_sound"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "dev.music.rusty_sound"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
     }
@@ -36,6 +36,20 @@ android {
 }
 
 val buildRustLibrary by tasks.registering(Exec::class) {
+    workingDir = rootProject.projectDir.parentFile
+
+    val androidHome = System.getenv("ANDROID_HOME")
+        ?: System.getenv("ANDROID_SDK_ROOT")
+        ?: run {
+            val localProps = java.util.Properties()
+            val localPropsFile = rootProject.file("local.properties")
+            if (localPropsFile.exists()) localProps.load(localPropsFile.inputStream())
+            localProps.getProperty("sdk.dir") ?: ""
+        }
+
+    environment("ANDROID_HOME", androidHome)
+    environment("ANDROID_JAR", "$androidHome/platforms/android-36/android.jar")
+
     commandLine(
         "cargo", "ndk",
         "-o", "AndroidApp/app/src/main/jniLibs/",
@@ -44,7 +58,6 @@ val buildRustLibrary by tasks.registering(Exec::class) {
         "--platform", "26",
         "build", "--lib", "--release"
     )
-    workingDir = rootProject.projectDir.parentFile
 }
 
 tasks.named("preBuild") {
