@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -41,7 +43,7 @@ val buildRustLibrary by tasks.registering(Exec::class) {
     val androidHome = System.getenv("ANDROID_HOME")
         ?: System.getenv("ANDROID_SDK_ROOT")
         ?: run {
-            val localProps = java.util.Properties()
+            val localProps = Properties()
             val localPropsFile = rootProject.file("local.properties")
             if (localPropsFile.exists()) localProps.load(localPropsFile.inputStream())
             localProps.getProperty("sdk.dir") ?: ""
