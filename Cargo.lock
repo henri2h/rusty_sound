@@ -3495,6 +3495,7 @@ name = "rusty_sound"
 version = "0.1.0"
 dependencies = [
  "android_logger",
+ "async-io",
  "cpal",
  "env_logger",
  "freya",

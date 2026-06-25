@@ -7,7 +7,6 @@ pub fn app() -> impl IntoElement {
     let mut mode = use_state(|| true); // true = tap, false = mic
     let mut tap_detector = use_state(|| TapDetector::new(8, 2.0));
     let mut tap_bpm = use_state(|| None::<f64>);
-    let mut tap_count_state = use_state(|| 0usize);
     let mut mic_bpm = use_state(|| None::<f64>);
     let mut mic_listening = use_state(|| false);
     let mut mic_status = use_state(|| String::from("Tap Start to begin"));
@@ -25,15 +24,6 @@ pub fn app() -> impl IntoElement {
         None => "---".to_string(),
     };
 
-    let tap_count = *tap_count_state.read();
-    let status_text = if is_tap {
-        format!("Taps: {}/8", tap_count)
-    } else if listening {
-        "Listening...".to_string()
-    } else {
-        mic_status.read().clone()
-    };
-
     let main_btn_text = if is_tap {
         "TAP"
     } else if listening {
@@ -43,6 +33,18 @@ pub fn app() -> impl IntoElement {
     };
 
     let secondary_btn_text = if is_tap { "Reset" } else { "Refresh BPM" };
+
+    // Auto-poll mic BPM every 200ms while listening
+    use_hook(|| {
+        spawn_forever(async move {
+            loop {
+                async_io::Timer::after(std::time::Duration::from_millis(200)).await;
+                if *mic_listening.read() {
+                    mic_bpm.set(audio::current_mic_bpm());
+                }
+            }
+        });
+    });
 
     rect()
         .expanded()
@@ -102,19 +104,7 @@ pub fn app() -> impl IntoElement {
         .child(
             rect()
                 .width(Size::fill())
-                .center()
-                .padding(Gaps::new_all(8.0))
-                .child(
-                    label()
-                        .text(status_text.clone())
-                        .font_size(16.0)
-                        .color((160, 160, 176)),
-                ),
-        )
-        .child(
-            rect()
-                .width(Size::fill())
-                .height(Size::percent(35.0))
+                .height(Size::percent(45.0))
                 .center()
                 .padding(Gaps::new_all(16.0))
                 .child(
@@ -123,7 +113,6 @@ pub fn app() -> impl IntoElement {
                             if is_tap {
                                 let bpm = tap_detector.write().tap();
                                 tap_bpm.set(bpm);
-                                tap_count_state.set(tap_detector.read().tap_count());
                             } else if listening {
                                 audio::stop_listening();
                                 mic_listening.set(false);
@@ -139,7 +128,7 @@ pub fn app() -> impl IntoElement {
                                 }
                             }
                         })
-                        .child(main_btn_text),
+                        .child(label().text(main_btn_text).font_size(36.0)),
                 ),
         )
         .child(
@@ -153,7 +142,6 @@ pub fn app() -> impl IntoElement {
                             if is_tap {
                                 tap_detector.write().reset();
                                 tap_bpm.set(None);
-                                tap_count_state.set(0);
                             } else {
                                 mic_bpm.set(audio::current_mic_bpm());
                             }

@@ -38,10 +38,6 @@ impl TapDetector {
         self.timestamps.clear();
     }
 
-    pub fn tap_count(&self) -> usize {
-        self.timestamps.len()
-    }
-
     pub fn current_bpm(&self) -> Option<f64> {
         if self.timestamps.len() < 2 {
             return None;
